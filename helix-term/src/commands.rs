@@ -1927,7 +1927,7 @@ fn global_search(cx: &mut Context) {
                         doc.set_selection(view.id, Selection::single(start, end));
                         align_view(doc, view, Align::Center);
                     },
-                    |_editor, FileResult { path, line_num }| {
+                    |fp, _editor, FileResult { path, line_num }| {
                         Some((path.clone(), Some((*line_num, *line_num))))
                     },
                 );
@@ -2269,7 +2269,7 @@ fn buffer_picker(cx: &mut Context) {
         |cx, meta, action| {
             cx.editor.switch(meta.id, action);
         },
-        |editor, meta| {
+        |fp, editor, meta| {
             let doc = &editor.documents.get(&meta.id)?;
             let &view_id = doc.selections().keys().next()?;
             let line = doc
@@ -2354,7 +2354,7 @@ fn jumplist_picker(cx: &mut Context) {
             let (view, doc) = current!(cx.editor);
             doc.set_selection(view.id, meta.selection.clone());
         },
-        |editor, meta| {
+        |fp, editor, meta| {
             let doc = &editor.documents.get(&meta.id)?;
             let line = meta.selection.primary().cursor_line(doc.text().slice(..));
             Some((meta.path.clone()?, Some((line, line))))

@@ -18,7 +18,7 @@ use crate::{
     },
 };
 
-use std::{borrow::Cow, collections::BTreeMap, path::PathBuf, sync::Arc};
+use std::{borrow::Cow, collections::BTreeMap, path::PathBuf, sync::Arc, fs::File, io::Write};
 
 /// Gets the language server that is attached to a document, and
 /// if it's not active displays a status message. Using this macro
@@ -197,6 +197,7 @@ fn sym_picker(
     current_path: Option<lsp::Url>,
     offset_encoding: OffsetEncoding,
 ) -> FilePicker<lsp::SymbolInformation> {
+    let mut symbol_store = symbols.clone();
     // TODO: drop current_path comparison and instead use workspace: bool flag?
     FilePicker::new(
         symbols,
@@ -235,7 +236,11 @@ fn sym_picker(
                 align_view(doc, view, Align::Center);
             }
         },
-        move |_editor, symbol| Some(location_to_file_location(&symbol.location)),
+        move |fp, _editor, symbol| { 
+            let mut file = File::create("/tmp/debug.txt").unwrap();
+            write!(file, "{}", fp.prompt()).unwrap();
+            Some(location_to_file_location(&symbol.location))
+        }
     )
     .truncate_start(false)
 }
@@ -295,7 +300,7 @@ fn diag_picker(
                 align_view(doc, view, Align::Center);
             }
         },
-        move |_editor, PickerDiagnostic { url, diag }| {
+        move |fp, _editor, PickerDiagnostic { url, diag }| {
             let location = lsp::Location::new(url.clone(), diag.range);
             Some(location_to_file_location(&location))
         },
@@ -712,7 +717,7 @@ fn goto_impl(
                 move |cx, location, action| {
                     jump_to_location(cx.editor, location, offset_encoding, action)
                 },
-                move |_editor, location| Some(location_to_file_location(location)),
+                move |fp, _editor, location| Some(location_to_file_location(location)),
             );
             compositor.push(Box::new(overlayed(picker)));
         }

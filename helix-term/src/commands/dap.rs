@@ -77,7 +77,7 @@ fn thread_picker(
                 threads,
                 thread_states,
                 move |cx, thread, _action| callback_fn(cx.editor, thread),
-                move |editor, thread| {
+                move |fp, editor, thread| {
                     let frames = editor.debugger.as_ref()?.stack_frames.get(&thread.id)?;
                     let frame = frames.get(0)?;
                     let path = frame.source.as_ref()?.path.clone()?;
@@ -694,7 +694,7 @@ pub fn dap_switch_stack_frame(cx: &mut Context) {
                 jump_to_stack_frame(cx.editor, frame);
             }
         },
-        move |_editor, frame| {
+        move |fp, _editor, frame| {
             frame
                 .source
                 .as_ref()

@@ -44,7 +44,7 @@ pub struct FilePicker<T: Item> {
     preview_cache: HashMap<PathBuf, CachedPreview>,
     read_buffer: Vec<u8>,
     /// Given an item in the picker, return the file path and line number to display.
-    file_fn: Box<dyn Fn(&Editor, &T) -> Option<FileLocation>>,
+    file_fn: Box<dyn Fn(&Self, &Editor, &T) -> Option<FileLocation>>,
 }
 
 pub enum CachedPreview {
@@ -89,7 +89,7 @@ impl<T: Item> FilePicker<T> {
         options: Vec<T>,
         editor_data: T::Data,
         callback_fn: impl Fn(&mut Context, &T, Action) + 'static,
-        preview_fn: impl Fn(&Editor, &T) -> Option<FileLocation> + 'static,
+        preview_fn: impl Fn(&FilePicker<T>, &Editor, &T) -> Option<FileLocation> + 'static,
     ) -> Self {
         let truncate_start = true;
         let mut picker = Picker::new(options, editor_data, callback_fn);
@@ -113,7 +113,7 @@ impl<T: Item> FilePicker<T> {
     fn current_file(&self, editor: &Editor) -> Option<FileLocation> {
         self.picker
             .selection()
-            .and_then(|current| (self.file_fn)(editor, current))
+            .and_then(|current| (self.file_fn)(self, editor, current))
             .and_then(|(path, line)| {
                 helix_core::path::get_canonicalized_path(&path)
                     .ok()
@@ -161,7 +161,12 @@ impl<T: Item> FilePicker<T> {
         self.preview_cache.insert(path.to_owned(), preview);
         Preview::Cached(&self.preview_cache[path])
     }
-}
+
+    /// Retrieve the prompt text.
+    pub fn prompt (&self) -> &str {
+        self.picker.prompt.line()
+    }
+ }
 
 impl<T: Item + 'static> Component for FilePicker<T> {
     fn render(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
